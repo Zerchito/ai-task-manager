@@ -29,7 +29,11 @@ export class MongoTaskRepository implements ITaskRepository {
   }
 
   async update(id: string, task: Partial<Task>): Promise<Task | null> {
-    return TaskModel.findByIdAndUpdate(id, task, { new: true });
+    return TaskModel.findByIdAndUpdate(
+      id,
+      task,
+      { returnDocument: 'after' }
+    );
   }
 
   async delete(id: string): Promise<boolean> {

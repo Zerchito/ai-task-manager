@@ -1,5 +1,6 @@
 import { Task, TaskDomainError, validateTask } from '../domain/Task';
 import { ITaskRepository } from '../repository/TaskRepository';
+import { analyzeTask } from '../../ai/GroqService';
 
 export class TaskService {
   constructor(private readonly repository: ITaskRepository) { }
@@ -16,12 +17,27 @@ export class TaskService {
 
   async createTask(data: Partial<Task>): Promise<Task> {
     validateTask(data);
+
+    const title = data.title!.trim();
+    const description = data.description || '';
+
+    let priority = data.priority || 'medium';
+    let subtasks: string[] = [];
+
+    try {
+      const suggestion = await analyzeTask(title, description);
+      priority = data.priority || suggestion.priority;
+      subtasks = suggestion.subtasks;
+    } catch (error) {
+      console.warn('AI analysis failed, using defaults:', error);
+    }
+
     return this.repository.create({
-      title: data.title!.trim(),
-      description: data.description || '',
-      priority: data.priority || 'medium',
+      title,
+      description,
+      priority,
       completed: false,
-      subtasks: [],
+      subtasks,
     });
   }
 
